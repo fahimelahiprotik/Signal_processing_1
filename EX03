@@ -1,0 +1,215 @@
+import numpy as np
+from scipy import signal
+import pylab as pl
+
+
+import matplotlib.pyplot as plt
+
+# function 1
+def pseudometric(p):
+
+    x0 = np.array([9.3, 5.7, -6.1, 0.2, -1.7, 8, -7.7, -4.5])
+    x=np.transpose(x0)
+    y0 = np.array([9.3, 5.7, 5.5, 0.2, 9.8, 8, -7.7, -4.5])
+    y = np.transpose(y0)
+    z = np.zeros(len(x))
+    m=np.zeros(len(x))
+    i = 0
+
+    for i in range(0,len(x)):
+            if len(x)!=len(y):
+                z=np.zeros(1)
+            elif p==0:
+                    z[i]=(abs(x[i]-y[i]))**p
+            elif p > 0 and p < 1:
+                    z[i]=(abs(x[i]-y[i]))**p
+            elif  p >= 1 and p < float("inf"):
+                    z[i]=(abs(x[i]-y[i]))**(p)
+            elif p==float("inf"):
+                    z[i]=(x[i]-y[i])
+            else:
+              z=np.zeros(1)
+    if p==float("inf"):
+        return max(z)
+    elif p >= 1 and p < float("inf"):
+        return sum(z)**(1/p)
+    else :
+        return sum(z)
+
+#function 2
+def pseudometric2(p, sigma):
+        x0 = np.array([9.3, 5.7, -6.1, 0.2, -1.7, 8, -7.7, -4.5])
+        x = np.transpose(x0)
+        v0 = np.zeros(len(x0))
+        y0 = np.zeros(len(x0))
+
+        v = np.eye(len(x0))*((sigma)**2)
+        mean = np.zeros(len(x0))
+        v0 = np.random.multivariate_normal(mean,v)
+        y0 = x0 + v0
+        y = np.transpose(y0)
+        z = np.zeros(len(x))
+        m = np.zeros(len(x))
+        i = 0
+
+        for i in range(0, len(x)):
+            if len(x) != len(y):
+                z = np.zeros(1)
+            elif p == 0:
+                z[i] = (abs(x[i] - y[i])) ** p
+            elif p > 0 and p < 1:
+                z[i] = (abs(x[i] - y[i])) ** p  # guisian function
+            elif p >= 1 and p < float("inf"):
+                z[i] = (abs(x[i] - y[i])) ** (p)
+            elif p == float("inf"):
+                z[i] = (x[i] - y[i])
+            else:
+                z = np.zeros(1)
+        if p == float("inf"):
+            return max(z)
+        elif p >= 1 and p < float("inf"):
+            return sum(z) ** (1 / p)
+        else:
+            return sum(z)
+
+
+#function 3
+def pseudometric3(p):
+
+    x0 = np.array([9.3, 5.7, -6.1, 0.2, -1.7, 8, -7.7, -4.5])
+    x=np.transpose(x0)
+
+    y0 = np.array([x[6],x[4],x[3],x[1],x[7],x[0],x[5],x[2]])
+    y = np.transpose(y0)
+    z = np.zeros(len(x))
+
+    m=np.zeros(len(x))
+    i = 0
+   # j = 0
+   # for j in range (0,len(p)):
+    for i in range(0,len(x)):
+            if len(x)!=len(y):
+                z=np.zeros(1)
+            elif p==0:
+                    z[i]=(abs(x[i]-y[i]))**p
+            elif p > 0 and p < 1:
+                    z[i]=(abs(x[i]-y[i]))**p
+            elif  p >= 1 and p < float("inf"):
+                    z[i]=(abs(x[i]-y[i]))**(p)
+            elif p==float("inf"):
+                    z[i]=(x[i]-y[i])
+            else:
+              z=np.zeros(1)
+    if p==float("inf"):
+        return max(z)
+    elif p >= 1 and p < float("inf"):
+        return sum(z)**(1/p)
+    else :
+        return sum(z)
+
+
+# function 4
+def pseudometric4(p,q):
+
+    x0 = np.array([9.3, 5.7, -6.1, 0.2, -1.7, 8, -7.7, -4.5])
+    x=np.transpose(x0)
+    y0 = q*np.round(x0/q)
+    y = np.transpose(y0)
+    z = np.zeros(len(x))
+    i = 0
+   # j = 0
+   # for j in range (0,len(p)):
+    for i in range(0,len(x)):
+            if len(x)!=len(y):
+                z=np.zeros(1)
+            elif p==0:
+                    z[i]=(abs(x[i]-y[i]))**p
+            elif p > 0 and p < 1:
+                    z[i]=(abs(x[i]-y[i]))**p
+            elif  p >= 1 and p < float("inf"):
+                    z[i]=(abs(x[i]-y[i]))**(p)
+            elif p==float("inf"):
+                    z[i]=(x[i]-y[i])
+            else:
+              z=np.zeros(1)
+    if p==float("inf"):
+        return max(z)
+    elif p >= 1 and p < float("inf"):
+        return sum(z)**(1/p)
+    else :
+        return sum(z)
+
+
+program = int(input('Enter the program no (1 for pseudo metric 2 for Awgn 3 for Permutation 4 for Quantization:'))
+
+if program==1:
+  #function 1 calling
+   P = np.array([0,1/100,1/50,1/10,1,2,1/2,10,50,100,float("inf")])
+   t = np.zeros(len(P))
+   j=0
+   for j in range(0,len(P)):
+    p = P[j]
+    t[j] = pseudometric(p)
+   print('t1=',t)
+
+elif program==2:
+ #function 2 calling
+
+  P = np.array([0,1/10,1/50,1/10,1,2,1/2,10,50,100,float("inf")])
+  t = np.zeros(len(P))
+  w = np.zeros(len(P))
+  k=0
+  a = int(input('Enter sigma value:'))
+  for k in range(1,1000):
+   j=0
+
+   for j in range(0,len(P)):
+    p = P[j]
+    t[j] = pseudometric2(p,a)
+    t[j]=t[j]/1000.0
+    w[j]=w[j]+t[j]
+    print('w=',w)
+
+  plt.subplot(221)
+  plt.semilogx(P,w)
+  plt.title('AWGN')
+  plt.grid(True)
+  plt.xlabel("log")
+  plt.ylabel("dp_x,x'")
+
+elif program==3:
+ #function 3 calling
+  P = np.array([0,1/10,1/50,1/10,1,2,1/2,10,50,100,float("inf")])
+  t = np.zeros(len(P))
+  j=0
+  for j in range(0,len(P)):
+    p = P[j]
+    t[j] = pseudometric3(p)
+  print('t2=',t)
+
+  plt.subplot(221)
+  plt.semilogx(P,t)
+  plt.title('Permutation')
+  plt.grid(True)
+  plt.xlabel("log")
+  plt.ylabel("dp_x,x'")
+
+elif program==4:
+#  function 4 calling
+   P = np.array([0,1/10,1/50,1/10,1,2,1/2,10,50,100,float("inf")])
+   t = np.zeros(len(P))
+   j=0
+   b = int(input('Enter the  value of D:'))
+   for j in range(0,len(P)):
+     p = P[j]#D=10-(-10)/2=10;D2=20/5=4,D3=20/10=2
+     t[j] = pseudometric4(p,b)
+   print('t3=',t)
+   plt.subplot(221)
+   plt.semilogx(P,t)
+   plt.title('Quantizytion')
+   plt.grid(True)
+   plt.xlabel("log")
+   plt.ylabel("dp_x,x'")
+
+else:
+  print("wrong ")
