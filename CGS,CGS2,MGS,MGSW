@@ -1,0 +1,178 @@
+import numpy as np
+from scipy import signal
+import pylab as pl
+import matplotlib.pyplot as plt
+from math import pow
+
+
+x=pow(10,-7)
+#print("x=",x)
+r=3
+c=4
+matrix=np.zeros((r,c))
+#print("matrix",matrix)
+matrix = np.transpose(np.array([[1,1,1],
+          [x,0,x],
+          [0,x,0],
+          [0,0,x]]))
+#print("mat_0",matrix)
+
+#=====================================================
+#CGS & MGS
+def GS(list,r,c,gs_type):
+ #print("s=", list)
+ #print("list1",list[1])
+ #print("lenof0",len(list[0]))
+ #print("len",len(list))
+ q=np.zeros((r,c))
+ e=np.zeros((r,c))
+ #print('e',len(list))
+ g=0
+ m=np.zeros(c)
+ #print("lenofm",len(m))
+ i=0
+ k=0
+ j=0
+ ##Initialize the first terms
+ e[0] = list[0]
+ #print("e[0]=",e[0])
+ g = np.matmul(np.transpose(e[0]),e[0])
+ #print("g=",g)
+ q[0] = e[0]/(np.sqrt(g))
+
+# print("q[0]",q[0])
+ if gs_type == 'cgs':
+  for i,j in zip(range(1,3),range(1,3)):
+   m=0
+   for k in range(0,i):
+ #   print("j=",j)
+
+    m=m+np.matmul(np.transpose(q[k]),list[j])*q[k] #m=m+np.matmul(np.transpose(q[k]),list[j])*q[k]
+    #   print("m=",m)
+    e[i]=list[j]-m
+    
+   if np.any(e[i]):
+     q[i] = e[i] / np.sqrt(np.matmul(np.transpose(e[i]), e[i]))
+   else:
+     i = i - 1# i intialize again
+ elif gs_type == 'mgs':
+  for i,j in zip(range(1,3),range(1,3)):
+   e[i]=list[j]
+   for k in range(0,i):
+    #print("j=",j)
+
+    m=np.matmul(np.transpose(q[k]),e[i])*q[k]
+    #print("m=",m)
+    e[i]=e[i]-m
+
+   if np.any(e[i]):
+     q[i] = e[i] / np.sqrt(np.matmul(np.transpose(e[i]),e[i]))
+   else:
+     i = i - 1# i intialize again #
+      
+ return np.transpose(e)
+#==========================================================================================
+#Weighted MGS
+def mgs_w(list,w,r,c):
+ #print("s=", list)
+ #print("list1",list[1])
+ #print("lenof0",len(list[0]))
+ #print("len",len(list))
+ q=np.zeros((r,c))
+ e=np.zeros((r,c))
+ #print('e',len(list))
+ g=0
+ m=np.zeros(c)
+ #print("lenofm",len(m))
+ i=0
+ k=0
+ j=0
+ e[0] = list[0]
+ #print("e[0]=",e[0])
+ g = np.matmul(np.matmul(np.transpose(e[0]),w),e[0])
+ #print("g=",g)
+ q[0] = e[0]/(np.sqrt(g))
+ #print("q[0]",q[0])
+
+ for i,j in zip(range(1,3),range(1,3)):
+  e[i]=list[j]
+  for k in range(0,i):
+   #print("j=",j)
+   m=np.matmul(np.matmul(np.transpose(q[k]),w),list[j])*q[k]
+   #print("m=",m)
+   e[i]=e[i]-m
+
+  if np.any(e[i]):
+    q[i] = e[i] / np.sqrt(np.matmul(np.matmul(np.transpose(e[i]),w),e[i]))
+  else:
+    i = i - 1# i intialize again # increment after enter (2)
+ return np.transpose(e)
+#=============================================================
+
+def CGS():
+    B1=GS(matrix,r,c,'cgs')
+    #hermitian matrix
+    BH1=np.transpose(B1)
+    C1=np.matmul(BH1,B1)
+    #Error Matrix
+    ER1=C1-np.eye(3)
+    print("Error_matrix_for_CGS\n",ER1)
+    R1=np.linalg.norm(ER1,'fro')
+    #print("CGS",B1)
+    #print("Hermetian",BH1)
+    #print("Dot_Product=BH1.B1",C1)
+    print("Orthogonalize_error_for_CGS= ",R1,'\n')
+
+
+def CGS2():
+    out1=GS(matrix,r,c,'cgs')
+    B2=GS(np.transpose(out1),r,c,'cgs')
+    #hermitian matrix
+    BH2=np.transpose(B2)
+    C2=np.matmul(BH2,B2)
+    #Error Matrix
+    ER2=C2-np.eye(3)
+    print("Error_matrix_for_CGS2\n",ER2)
+    R2=np.linalg.norm(ER2,'fro')
+    #print("B2_Matrix",B2)
+    #print("Hermetian",BH2)
+    #print("Dot_Product=BH2.B2",C2)
+    print("Orthogonalize_error_for_CGS2=",R2,'\n')
+    
+def MGS():
+    B3=GS(matrix,r,c,'mgs') #   main()
+    #
+    #print("mgs",B3)
+    #hermitian matrix
+    BH3=np.transpose(B3)
+    C3=np.matmul(BH3,B3)
+    #Error Matrix
+    ER3=C3-np.eye(3)
+    print("Error_matrix_for_MGS\n",ER3)
+    R3=np.linalg.norm(ER3,'fro')
+    #print("B3_Matrix",B3)
+    #print("Hermetian",BH3)
+    #print("Dot_Product=BH3.B3",C3)
+    print("Orthogonalize_error_for_MGS= ",R3,'\n')    
+    
+def MGSW():
+    w=np.array([[1,0,0,0],[0,1/4,0,0],[0,0,1/2,0],[0,0,0,1/10]] )
+    B4=mgs_w(matrix,w,r,c) #   main()
+    #print("mgsw",B4)
+    #hermitian matrix
+    BH4=np.transpose(B4)
+    C4=np.matmul(np.matmul(BH4,w),B4)
+    #Error Matrix
+    ER4=C4-np.eye(3)
+    print("Error_matrix_for_MGSW\n",ER4)
+    R4=np.linalg.norm(ER4,'fro')
+    #print("B4_Matrix",B4)
+    #print("Hermetian",BH4)
+    #print("Dot_Product=BH4.B4",C4)
+    print("Orthogonalize_error_for_MGSW=",R4,'\n')
+#=============================================================
+
+CGS()
+CGS2()
+MGS()
+MGSW()
