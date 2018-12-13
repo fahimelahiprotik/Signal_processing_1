@@ -1,0 +1,52 @@
+import numpy as np
+from scipy import signal
+import pylab as pl
+import matplotlib.pyplot as plt
+from math import pow
+from numpy.linalg import inv
+
+
+def IRLS(co,ro,y,P,A,x):
+ W=np.zeros((ro,ro))
+
+ c=np.zeros((ro,co))
+ e=np.zeros((ro,co))
+
+ g = np.zeros((co,ro))
+ B=np.zeros((4,4))
+
+ c=np.matmul(np.matmul(inv(np.matmul(np.transpose(A),A)),np.transpose(A)),y)
+ #print("C=",c)
+ for k in range(len(P)):
+     la = 1 / (P[k]-1)
+     for i in range(0,100):
+      e=y-np.matmul(A,c)
+     # print("e",e[2])
+     # print("lene",len(e))
+      for b in range(len(e)):
+          print("b",b)
+          W[b][b] = np.abs(e[b])**(P[k]-2)
+     # W=np.diag(g,nrow=7)
+     # print("W",W)
+      c=la*(np.matmul(inv(np.matmul(np.matmul(np.transpose(A),W),A)),np.matmul(np.matmul(np.transpose(A),W),y)))+(1-la)*c
+      B[:,k]=c
+ plt.plot(x,y,'r--',x,np.matmul(A,B[:,0]),'b--',x,np.matmul(A,B[:,1]),'g--',x,np.matmul(A,B[:,2]),'k--',x,np.matmul(A,B[:,3]),'y--')
+ plt.title("Iteratively reweighted least squares (IRLS)")
+ plt.xlabel("X")
+ plt.ylabel("Given data set and estimated curve")
+ plt.show()
+
+P = np.array([2,4,10,20])
+x = np.array([2,3,4,5,6,8,9])
+y = np.array([25,8,10,2,3,5,10])
+co = 1
+ro = 7
+A=np.vstack([np.ones(len(x)),x,x**2,x**3]).T
+print("A=",A)
+G=IRLS(co,ro,y,P,A,x)
+
+print("IRLS=",G)
+
+''''''''
+'The characteristics of the estimated curve is getting closer as p increses '
+''''''''
