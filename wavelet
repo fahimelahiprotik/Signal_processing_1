@@ -1,0 +1,197 @@
+
+import numpy as np
+from matplotlib import pyplot as plt
+import math
+
+img1 = plt.imread('cameraman.png') #img1 Cameraman
+img2=plt.imread('clockA.png') # img2 clockA
+
+
+img3=plt.imread('clockB.png') # img3 clockB
+
+#print("len_row_img1",len(img2),"len_col_img1",len(img2.T))
+#print("len_row_img2",len(img3),"len_col_img2",len(img3.T))
+
+u=np.subtract(img3,img2)
+#print("u",u)
+#print("len_row_img2",len(u))
+
+
+def rows_fn(img):
+    N = len(img)
+    M = len(img.T)
+    w = np.zeros((N,M))
+    for i in range(N//2):
+        w[i,:] = (1/(math.sqrt(2)))*(img[(2*i)+1,:] + img[2*i,:])
+        w[i+(N//2),:] = (1/(math.sqrt(2)))*(img[(2*i)+1,:] - img[(2*i),:])
+    return w
+
+def cols_fn(img):
+    N = len(img)
+    M = len(img.T)
+    D = np.zeros((N,M))
+    for k in range(M//2):
+        D[:,k] = (1/(math.sqrt(2)))*(img[:,(2*k)+1] + img[:,(2*k)])
+        D[:,k+(M//2)] = (1/(math.sqrt(2)))*(img[:,(2*k)+1] - img[:,(2*k)])
+    return D
+
+def inv_rows_fn(inv_img):
+    N = len(inv_img)
+    M = len(inv_img.T)
+    invw = np.zeros((N,M))
+    for m in range (N//2):
+        invw[(2*m)+1,:]=(1/(math.sqrt(2)))*(inv_img[m,:]+ inv_img[m+(N//2),:])
+        invw[(2*m),:]=(1/(math.sqrt(2)))*(inv_img[m,:]- inv_img[m+(N//2),:])
+    return invw
+
+def inv_cols_fn(inv_img):
+    N = len(inv_img)
+    M = len(inv_img.T)
+    invD = np.zeros((N, M))
+    for n in range(M//2):
+        invD[:,(2*n)+1] = (1/(math.sqrt(2)))*(inv_img[:,n]+ inv_img[:,n+(M//2)])
+        invD[:,(2*n)] = (1/(math.sqrt(2))) * (inv_img[:,n] - inv_img[:,n+(M//2)])
+    return invD
+
+
+###########main functions#####
+
+def haar2d(image):
+    g = cols_fn(image) # calling column function to do the row operations
+    g2 = rows_fn(g)    # calling row function to do the column operations
+    return g2
+
+def haar2d_inv(image):
+
+    J = inv_rows_fn(image)  # calling row function to do the column operations
+    J2 = inv_cols_fn(J)  # calling column function to do the row operations
+
+    return J2
+
+
+##recursive call for kth order haar2d
+def haar2d_K(img,k):
+   N=len(img)
+   M=len(img.T)
+
+   if k == 0:
+      return img
+   else:
+    p = pow(2,k-1)
+    g = haar2d_K(img,k-1)
+    g[:(N//p),:(M//p)] = haar2d(g[:(N//p),:(M//p)])
+    return g
+
+
+##recursive call for kth order ihaar2d kth order
+def ihaar2d_K(img,k):
+     N = len(img)
+     M = len(img.T)
+     p = pow(2,k-1)
+     if k==0:
+        return img
+     else :
+        img[:(N//p),:(M//p)]=haar2d_inv(img[:(N//p),:(M//p)])
+        return ihaar2d_K(img,k-1)
+
+def max_sel(x,y):
+    if np.abs(x) >= np.abs(y):
+        return x
+    else:
+        return y
+
+def fusion(img1a,img2a,K):
+
+     N1 = len(img1a)
+     M1 = len(img1a.T)
+     N2 = len(img2a)
+     M2 = len(img2a.T)
+     N=max(N1,N2)
+     M=max(M1,M2)
+
+     p=pow(2,K)
+     w=np.zeros((N,M))
+     w1 = np.zeros((N,M))
+     w2 = np.zeros((N,M))
+     x=np.zeros((N,M))
+
+
+
+     w1=haar2d_K(img1a,K)
+     plt.title("Applying haar2d on clock A ")
+     plt.imshow(w1, cmap = 'gray', interpolation = "lanczos")
+     plt.show()
+
+     w2=haar2d_K(img2a,K)
+     plt.title("Applying haar2d on clock B")
+     plt.imshow(w2, cmap = 'gray', interpolation  = "lanczos")
+     plt.show()
+
+     for ik in range (N):
+         for kk in range(M):
+           if ik<=(N//p) and kk<=(M//p):
+              w[ik,kk]=((w1[ik,kk]+w2[ik,kk]))*0.5
+           else:
+              w[ik,kk]=max_sel(w1[ik,kk],w2[ik,kk])
+#
+     plt.title("whole")
+     plt.imshow(w, cmap='gray', interpolation="lanczos")
+     plt.show()
+
+     x = ihaar2d_K(w, K)
+     return x
+
+
+
+    ###applying##
+order=3 #order
+
+
+fig1=plt.figure()
+plt.subplot(131)
+plt.title("Original image")
+plt.imshow(img1, cmap = 'gray', interpolation = "lanczos")
+fig1.show()
+
+plt.subplot(132)
+q1 =haar2d(img1) #1st order apply
+plt.title("Applying haar2D on original image")
+plt.imshow(q1, cmap = 'gray', interpolation = "lanczos")
+fig1.show()
+ # #
+
+plt.subplot(133)
+q2=haar2d_inv(q1) #inverse it to get orginal
+plt.title("Applying inv haar2D on haar2D")
+plt.imshow(q2, cmap = 'gray', interpolation = "lanczos")
+fig1.show()
+
+fig2=plt.figure()
+plt.subplot(131)
+plt.title("Original image")
+plt.imshow(img1, cmap = 'gray', interpolation = "lanczos")
+fig2.show()
+
+q3=haar2d_K(img1,3)
+plt.subplot(132)
+plt.title("Kth order haar2D")
+plt.imshow(q3, cmap = 'gray', interpolation = "lanczos")
+fig2.show()
+ 
+q4=ihaar2d_K(q3,3)
+plt.subplot(133)
+plt.title("Kth order inverse")
+plt.imshow(q4, cmap = 'gray', interpolation = "lanczos")
+fig2.show()
+
+fig3=plt.figure()
+q5=fusion(img2,img3,3)
+plt.title("Fusion of Clock A and B - 3rd Order")
+plt.imshow(q5, cmap='gray', interpolation = "lanczos")
+fig3.show()
+
+'''
+The final fused image is not 
+
+
+'''
