@@ -1,12 +1,3 @@
-"""
-TU Wien
-Signal Processing 1
-Exercise 7 - Python
-Authors:
-Joshua Hill - 11828342
-Fahim Elahi - 51810248
-"""
-
 
 import numpy as np
 from matplotlib import pyplot as plt
