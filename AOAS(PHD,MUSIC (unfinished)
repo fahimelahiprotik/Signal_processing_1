@@ -1,0 +1,227 @@
+"""
+TU Wien
+Signal Processing 1
+Exercise 7 - Python
+Authors:
+Joshua Hill - 11828342
+Fahim Elahi - 51810248
+"""
+
+
+import numpy as np
+from matplotlib import pyplot as plt
+import math
+import cmath
+from scipy.sparse.linalg import eigs
+from numpy import linalg as LA
+from numpy import ndarray as nd
+import matplotlib.pyplot as poly
+from scipy.optimize import curve_fit
+#X=np.matrix([1,2,3,4,5,6,7,8])
+
+X = np.load('receivedSignal.npy', mmap_mode='r')
+
+def AutoCorrelation(x,n):
+
+ N=200
+ S=0
+ for i in range(1,N-np.abs(n)):
+  if n >=0 :
+      S=np.conj(x[i])*x[i+n]
+  else :
+      S = np.conj(x[i-n])*x[i]
+ S=S/N
+ return S
+
+J=np.zeros(200)
+R=np.zeros((200,200),dtype=complex)
+B=np.zeros((200,200),dtype=complex)
+e=np.zeros((200,200),dtype=complex)
+#c=np.zeros((200,200))
+
+for k in range(0,200):
+    for l in range(0,200):
+        R[k,l]=AutoCorrelation(X,k-l)
+
+
+values,g=LA.eig(R)
+
+###Eigen Value plot
+L=np.zeros((200,1),dtype=complex)
+
+sort_values=np.sort(values)
+plt.plot(sort_values)
+t=np.arange(200)
+plt.stem(t,sort_values)
+plt.title('Sorted Eigen Values Plot')
+plt.xlabel('Signal and Noise subspace')
+plt.ylabel('Eigen values')
+plt.show()
+
+
+min_value=np.amin(values)
+#print("a",min_value)
+
+min_value_index=np.argmin(values)
+
+L=g[:,[min_value_index]] #Min vector
+#print("L",L)
+#min_vector=np.take(g,L)
+
+#print("min_vector",L)
+shape1=np.shape(L)
+#print("shape1",shape1)
+#print("min_value_index",min_value_index)
+
+
+###Eigen Value plot
+plt.plot(values)
+t=np.arange(200)
+plt.stem(t,values)
+plt.title('unsorted Eigen Values Plot')
+plt.xlabel('Signal and Noise subspace')
+plt.ylabel('Eigen values')
+plt.show()
+####################
+vect=np.asarray(g).T
+idx=np.where(values<0)
+
+idx2=np.where(values>0)
+
+idx2=np.asanyarray(idx2)
+idx1=np.asarray(idx)
+
+#print("inx",len(idx1))
+for w in  enumerate (idx2) :
+    U=np.delete(vect,idx2,0)
+
+q1=U.T #the noise vector
+shapeQQ=np.shape(q1)
+#print("noisevector",shapeQQ)
+for i in  enumerate (idx1) :
+    c=np.delete(vect,idx1,0)
+
+q=c.T  # the signal vectors
+
+angle=np.zeros((1,200))
+#
+RT=np.zeros((3,200),dtype=complex)
+
+def array_vector(theta):
+ #PA=np.complex128
+ PA=np.zeros((1,200),dtype=complex)
+ w=math.pi*np.math.cos(theta)
+ PA[:,0]=[1]
+ for d in range (1,200):
+     PA[:,d]=np.array(cmath.e**(1j*d*w))
+ return PA
+
+#function call
+RT1=array_vector(30)
+RT11=RT1.T
+R11_shape=np.shape(RT11)
+#print("RT11",R11_shape)
+RT2=array_vector(90)
+RT22=RT2.T
+RT3=array_vector(110)
+RT33=RT3.T
+
+RT=np.vstack((RT11,RT22,RT33))
+
+#print("RT2",RT2)
+# print("RT3",RT3)
+
+
+####PHD Algorithm #####
+
+
+def PHD_algorithm(RR):
+ PHD = np.zeros((1, 3), dtype=complex)
+ x0=np.conj(RR)
+ x1=x0.T
+ shape22=np.shape(x1)
+# print("x1shape=",shape22)
+ x2=np.vdot(x1,L)
+ #print("x2",x2)
+ shape22=np.shape(x2)
+ #print("shape22",shape22)
+ Z=(np.abs(x2))
+ PHD=1/((Z)**2)
+ return PHD
+
+#################MUSIC ALGORITHM#############
+
+def MUSIC_algorithm(RQ,q1):
+ EN = np.zeros((200,200), dtype=complex)
+ MUSIC = np.zeros((1, 3), dtype=complex)
+ q11=np.conj(q1).T #hermitian
+ EN=np.matmul(q1,q11)
+ shapeq=np.shape(EN)
+ #print("shape of nose",shapeq)
+ PN=np.matmul(EN,RQ)
+ xp=np.conj(RQ)
+ xMU=xp.T
+ QQ=np.matmul(xMU,PN)
+ ZZ=np.abs(QQ)
+ MUSIC=1/ZZ
+ return MUSIC
+
+####MUSIC ALGORITHM######FUNCTION CALL #######
+#
+MUSIC1=MUSIC_algorithm(RT11,q1)
+MUSIC2=MUSIC_algorithm(RT22,q1)
+MUSIC3=MUSIC_algorithm(RT11,q1)
+scale=10000
+MUSIC_P=np.array([MUSIC1,MUSIC2,MUSIC3])
+
+print("MUSIC_Estimated=",MUSIC1,"MUSIC2_Estimated=",MUSIC2,"MUSIC3_estimated=",MUSIC3)
+
+############PHD ALGORITHM ###### FUNCTION CALL ###
+PHD_value1=PHD_algorithm(RT11)
+PHD_value2=PHD_algorithm(RT22)
+PHD_value3=PHD_algorithm(RT22)
+
+print("PHD1_Estimated=",PHD_value1,"PHD2_Estimated=",PHD_value2,"PHD3_Estimated=",PHD_value3)
+
+###creating polynomial ####
+
+def func(x, a, b, c):
+  return a + b * x + c * x ** 2
+
+x = np.array([30, 90, 110])
+PHD_POLY=np.array([PHD_value1,PHD_value2,PHD_value3])
+
+########
+popt, _ = curve_fit(func, x, PHD_POLY)
+#print("1",popt)
+
+popt_cons, _ = curve_fit(func, x, PHD_POLY)
+#print("1",popt_cons)
+
+xm = np.linspace(x[0], x[-1], 1000)
+
+plt.plot(x, PHD_POLY, 'bo')
+plt.plot(xm, func(xm, *popt), 'k-')
+plt.plot(xm, func(xm, *popt_cons), 'r-')
+plt.title('PHD Algorithm')
+plt.xlabel('Actual signal directions/degree')
+plt.ylabel('Angles of Arrivals/degree')
+plt.show()
+#################################
+# x1 = np.array([30, 90, 110])
+# MUSIC_P=np.array([MUSIC1,MUSIC2,MUSIC3])
+# popt, _ = curve_fit(func, x1, MUSIC_P)
+# #print("1",popt1)
+#
+# popt_cons, _ = curve_fit(func, x1, MUSIC_P)
+# #print("1",popt_cons)
+#
+# xm1=np.linspace(x1[0], x1[-1], 1000)
+# plt.plot(x1, MUSIC_P, 'bo')
+# plt.plot(xm1, func(xm1, *popt), 'k-')
+# plt.plot(xm1, func(xm1, *popt_cons), 'r-')
+# plt.title('MUSIC Alogorithm')
+# plt.xlabel('Actual signal directions/degree')
+# plt.ylabel('Angles of Arrivals/degree')
+# plt.show()
+#
