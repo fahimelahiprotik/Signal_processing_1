@@ -1,0 +1,93 @@
+RR = np.array([[1,0.5],
+               [0.5,1]]) #receive side matrix
+#print("RR",RR)
+RT=np.array([[1,0.6,0.2],
+            [0.6,1,0.6],
+            [0.2,0.6,1]]) #transmitting side matrix
+
+#for receive side matrix
+valuesRR,VecRR=LA.eig(RR) #extarcting values and eigenvectors of RR
+
+rr=np.sqrt(valuesRR) #squart the values
+lamdaRR=np.diag(rr) # constarcting diagonal matrix with squart eigen values
+
+vectRRinv=LA.inv(VecRR)
+RR_1=np.dot(VecRR,lamdaRR)
+RR_12=np.dot(RR_1,vectRRinv) #Reconstructed Matrix
+
+#---for transmitting side matrix
+
+valuesRT,VecRT=LA.eig(RT) #extarcting values and eigenvectors of RR
+
+rt=np.sqrt(valuesRT) #squart the values
+lamdaRT=np.diag(rt)# constarcting diagonal matrix with squrt eigen values
+
+vectRTinv=LA.inv(VecRT)
+RT_1=np.dot(VecRT,lamdaRT)
+RT_12=np.dot(RT_1,vectRTinv) #Reconstructed Matrix
+
+########
+def kronecker(matrix1,matrix2):
+    final_list=[]
+    sub_list=[]
+    count=len(matrix2)
+    for elem1 in matrix1:
+        counter = 0
+        check = 0
+        while check<count:
+            for num1 in elem1:
+                for num2 in matrix2[counter]:
+                    sub_list.append(num1 * num2)
+            counter+=1
+            final_list.append(sub_list)
+            sub_list=[]
+            check+=1
+
+    return final_list
+
+#########
+w=1000
+m=2
+n=3
+L=m*n
+#Kronecker product of RR(1/2) and RT(1/2) (Analytic PART)
+RK=np.zeros((L,L))
+RK=kronecker(RR_12,RT_12)
+#print("shapeRK",np.shape(RK))
+
+K=np.eye(w,w)
+#print("K",K)
+
+hp=np.zeros((m,n,w))
+#print("hp",hp)
+h=np.zeros((m,n,w))
+RH=np.zeros((L,L,w))
+RM=np.zeros((L,L,w))
+VECH=np.zeros((L,1))
+VECHT=np.zeros((1,L))
+E=np.zeros(w)
+hp= np.random.multivariate_normal(np.zeros(w),K,(2,3))
+
+for n in range(0,w):
+    h[:,:,n]= np.matmul(np.matmul(RR_12,hp[:,:,n]),RT_12)
+
+for t in range(0,w):
+    for g in range(0,t+1):
+         VECH=h[:,:,g].reshape((L, 1), order="F")
+         VECHT=np.conj(VECH).T
+         RH[:,:,t]=RH[:,:,t]+np.matmul(VECH,VECHT)
+
+    RH[:,:,t]=RH[:,:,t]/(t+1)
+    print("Estimate of R(hat)=", RH)
+    RM[:,:,t]=RH[:,:,t]-RK
+    E[t]=LA.norm(RM[:,:,t],'fro')
+
+U=np.linspace(1,w,num=w)
+plt.plot(U,E)
+plt.grid()
+plt.title('Frobenius norm of the difference of RH(hat)\n'
+          'and the analytic solution of the channel correlation\n'
+          'over realizations\n')
+plt.xlabel('Realizations')
+plt.ylabel('Frobenius norm')
+plt.show()
